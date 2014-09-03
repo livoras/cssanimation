@@ -5,23 +5,15 @@ CSSAmination = require("./src/cssanim.coffee");
 
 tl = new CSSAmination;
 
-CSSAmination.set(".box", {
-  "width": "50px",
-  "height": "50px",
-  "border": "1px solid #ccc",
-  "position": "fixed",
-  "top": "0px",
-  "left": "0px"
-});
-
 tl = new CSSAmination;
 
 tl.to(".box", 0.5, {
   x: 50,
   y: 200,
+  scaleX: 1,
+  scaleY: 1,
   "background-color": "red",
-  "rotationZ": 360,
-  transformOrigin: "right bottom"
+  "rotationZ": 360
 }).to(".box", 0.5, {
   "opacity": "0",
   x: 50,
@@ -39,20 +31,20 @@ tl.to(".box", 0.5, {
   "background-color": "yellow",
   scaleX: 1.5,
   scaleY: 1.5
-}, "fuck").to(".box2", 0.5, {
+}, "fuck").to(".box2", 0.3, {
   y: 400,
   "background-color": "green",
-  scaleX: 1.5,
-  scaleY: 1.5,
-  delay: 6
-}, "fuck").set(".box2", {
-  "border": "2px solid red"
-}).to(".box", 1, {
+  scaleX: 2,
+  scaleY: 2,
+  delay: 0.1
+}, "fuck").to(".box", 1, {
   x: 200
 }).delay(2).to(".box2", 1, {
   x: 150,
   rotationZ: -720,
   "border-radius": "100px"
+}).set(".box2", {
+  "border": "100px solid #ccc"
 }).delay(2).to(".box1", 1, {
   x: 100,
   skewX: 30
@@ -62,12 +54,18 @@ tl.to(".box", 0.5, {
     return console.log("fuck--");
   }
 }).to(".box", 1, {
-  x: 0,
-  y: 0,
-  scaleX: 0,
+  skewX: -30,
   scaleY: 0,
-  ease: "ease-in-out"
-});
+  scaleX: 0,
+  x: 0,
+  y: 0
+}).call((function(_this) {
+  return function() {
+    return setTimeout(function() {
+      return tl.start();
+    });
+  };
+})(this));
 
 document.getElementById("start").addEventListener("click", function() {
   return tl.start();
@@ -90,7 +88,7 @@ tl.start();
 
 
 },{"./src/cssanim.coffee":2}],2:[function(require,module,exports){
-var CSSAmination, animate, camelize, clear, css, disableAnimation, enableAnimation, getDoms, processStateToStyle, set, setOrAnimate, setTransform, _ref,
+var CSSAmination, animate, camelize, clear, css, disableAnimation, enableAnimation, getDoms, set, setOrAnimate, setTransform, _ref,
   __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 _ref = require("./helpers.coffee"), getDoms = _ref.getDoms, setTransform = _ref.setTransform, css = _ref.css, camelize = _ref.camelize;
@@ -106,13 +104,18 @@ clear = function(selector) {
   return _results;
 };
 
-set = function(selector, style) {
+set = function(selector, style, isNoMove) {
   var dom, doms, _i, _len, _results;
   doms = getDoms(selector);
   _results = [];
   for (_i = 0, _len = doms.length; _i < _len; _i++) {
     dom = doms[_i];
-    _results.push(css(dom, style));
+    if (isNoMove) {
+      disableAnimation(dom);
+      _results.push(css(dom, style));
+    } else {
+      _results.push(css(dom, style));
+    }
   }
   return _results;
 };
@@ -181,15 +184,22 @@ CSSAmination = (function() {
     }
     this.isRunning = true;
     this.currentProgress = 0;
+    this.forceStop = false;
+    this.reset();
     this._loop();
     return this;
   };
 
   CSSAmination.prototype._loop = function() {
-    var delay_max, max, state, type, _i, _len, _loop, _ref1;
+    var delay_max, dom, doms, max, state, type, _i, _j, _len, _len1, _loop, _ref1;
     if (this.currentProgress === this.seq.length || this.forceStop) {
       this.isRunning = false;
       this.forceStop = false;
+      doms = getDoms(this.allSelectors.join(","));
+      for (_i = 0, _len = doms.length; _i < _len; _i++) {
+        dom = doms[_i];
+        disableAnimation(dom);
+      }
       return;
     }
     if (this.isPause) {
@@ -212,13 +222,12 @@ CSSAmination = (function() {
       max = 0;
       delay_max = 0;
       _ref1 = this.labels[state];
-      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-        state = _ref1[_i];
+      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+        state = _ref1[_j];
         max = state.secs > max ? state.secs : max;
         delay_max = state.style.delay > delay_max ? state.style.delay : delay_max;
         setOrAnimate(state);
       }
-      console.log(delay_max + max);
       return setTimeout(_loop, (delay_max + max) * 1000);
     } else if (type === "object") {
       return setOrAnimate(state, _loop);
@@ -242,6 +251,7 @@ CSSAmination = (function() {
   CSSAmination.prototype.stop = function(isReset) {
     this.forceStop = true;
     this.isRunning = false;
+    this.isPause = false;
     this.reset();
     return this;
   };
@@ -269,7 +279,7 @@ setOrAnimate = function(state, cb) {
     return animate(state, cb);
   };
   if (!state.secs) {
-    set(state.selector, state.style);
+    set(state.selector, state.style, true);
     return typeof cb === "function" ? cb() : void 0;
   } else {
     if (!state.style.delay) {
@@ -281,20 +291,15 @@ setOrAnimate = function(state, cb) {
 };
 
 animate = function(state, cb) {
-  var dom, doms, style, _i, _len;
+  var dom, doms, _i, _len;
   doms = getDoms(state.selector);
   for (_i = 0, _len = doms.length; _i < _len; _i++) {
     dom = doms[_i];
     enableAnimation(dom, state.secs, state.style.ease);
-    style = processStateToStyle(state.style);
-    css(dom, style);
+    css(dom, state.style);
   }
   return setTimeout(function() {
-    var _base, _j, _len1;
-    for (_j = 0, _len1 = doms.length; _j < _len1; _j++) {
-      dom = doms[_j];
-      disableAnimation(dom);
-    }
+    var _base;
     if (typeof cb === "function") {
       cb();
     }
@@ -304,10 +309,10 @@ animate = function(state, cb) {
 
 enableAnimation = function(dom, duration, ease) {
   ease = ease || "ease";
-  if (!/translateZ\(.+?\)/.test(dom.style.webkitTransfom)) {
-    dom.style.webkitTransfom += " translateZ(0px)";
+  if (!/translateZ\(.+?\)/.test(dom.style.webkitTransform)) {
+    dom.style.webkitTransform = "translateX(0) translateY(0) translateZ(0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scaleX(1) scaleY(1) scaleZ(1) skewX(0deg) skewY(0deg)";
   }
-  dom.style.webkitBackfaceVisibility = "hidden";
+  dom.style.webkitBackfaceisibility = "hidden";
   dom.style.webkitPerspective = "1000";
   return dom.style.webkitTransition = "all " + duration + "s " + ease;
 };
@@ -315,10 +320,6 @@ enableAnimation = function(dom, duration, ease) {
 disableAnimation = function(dom) {
   dom.style.webkitTransition = "";
   return dom.style.transition = "";
-};
-
-processStateToStyle = function(style) {
-  return style;
 };
 
 CSSAmination.set = set;

@@ -4,10 +4,14 @@ clear = (selector)->
     for dom in getDoms selector
         dom.style.cssText = ""
 
-set = (selector, style)->
+set = (selector, style, isNoMove)->
     doms = getDoms selector
     for dom in doms
-        css dom, style
+        if isNoMove
+            disableAnimation dom
+            css dom, style
+        else
+            css dom, style
 
 class CSSAmination
     constructor: ->
@@ -46,23 +50,31 @@ class CSSAmination
         if @isRunning then return
         @isRunning = yes
         @currentProgress = 0
+        @forceStop = no
+        @reset()
         @_loop()
         @
     _loop:  ->
         if @currentProgress is @seq.length or @forceStop
             @isRunning = no
             @forceStop = no
+            doms = getDoms (@allSelectors.join ",")
+            for dom in doms
+                disableAnimation dom
             return
         if @isPause then return
         state = @seq[@currentProgress]
         @currentProgress++
         type = typeof state
         _loop = => @_loop()
+
         if type is "number"
             setTimeout _loop, state * 1000
+
         else if type is "function"
             state()
             _loop()
+
         else if type is "string"
             max = 0
             delay_max = 0
@@ -70,8 +82,8 @@ class CSSAmination
                 max = if state.secs > max then state.secs else max 
                 delay_max = if state.style.delay > delay_max then state.style.delay else delay_max 
                 setOrAnimate state
-            console.log delay_max + max
             setTimeout _loop, (delay_max + max) * 1000
+
         else if type is "object"
             setOrAnimate state, _loop
 
@@ -88,6 +100,7 @@ class CSSAmination
     stop: (isReset)->
         @forceStop = yes
         @isRunning = no
+        @isPause = no
         @reset()
         @
 
@@ -103,7 +116,7 @@ class CSSAmination
 setOrAnimate = (state, cb)->
     _animate = -> animate state, cb
     if not state.secs
-        set state.selector, state.style
+        set state.selector, state.style, yes
         cb?()
     else
         if not state.style.delay then _animate()
@@ -113,29 +126,23 @@ animate = (state, cb)->
     doms = getDoms state.selector
     for dom in doms
         enableAnimation dom, state.secs, state.style.ease
-        style = processStateToStyle state.style
-        css dom, style
+        css dom, state.style
     setTimeout ->
-        for dom in doms
-            disableAnimation dom
         cb?()
         state.style.onComplete?()
     , state.secs * 1000
 
 enableAnimation = (dom, duration, ease)->
     ease = ease or "ease"
-    if not /translateZ\(.+?\)/.test dom.style.webkitTransfom
-        dom.style.webkitTransfom += " translateZ(0px)"
-    dom.style.webkitBackfaceVisibility = "hidden"
+    if not /translateZ\(.+?\)/.test dom.style.webkitTransform
+        dom.style.webkitTransform = "translateX(0) translateY(0) translateZ(0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scaleX(1) scaleY(1) scaleZ(1) skewX(0deg) skewY(0deg)"
+    dom.style.webkitBackfaceisibility = "hidden"
     dom.style.webkitPerspective = "1000"
     dom.style.webkitTransition = "all #{duration}s #{ease}"
 
 disableAnimation = (dom)->
     dom.style.webkitTransition = ""
     dom.style.transition = ""
-
-processStateToStyle = (style)->
-    style
 
 CSSAmination.set = set
 module.exports = CSSAmination
