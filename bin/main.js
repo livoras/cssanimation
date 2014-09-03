@@ -5,58 +5,30 @@ CSSAmination = require("./src/cssanim.coffee");
 
 tl = new CSSAmination;
 
-tl = new CSSAmination;
-
-tl.to(".box", 0.5, {
-  x: 50,
-  y: 200,
-  scaleX: 1,
-  scaleY: 1,
+tl.set(".box2", {
+  x: 200,
+  y: 200
+}).to(".box2", 0.5, {
+  opacity: 1
+}).to(".box2", 0.5, {
+  opacity: 1,
+  rotationz: 720,
+  scaleY: 3,
+  scaleX: 3,
   "background-color": "red",
-  "rotationZ": 360
-}).to(".box", 0.5, {
-  "opacity": "0",
-  x: 50,
-  "background-color": "blue"
-}).call((function(_this) {
-  return function() {
-    return console.log("FUCK");
-  };
-})(this)).to(".box", 1, {
-  "opacity": "1",
-  x: 100,
-  y: 0
-}).to(".box1", 0.5, {
-  y: 200,
-  "background-color": "yellow",
+  "border-radius": "100px"
+}).to(".box2", 0.3, {
+  scaleX: 1,
+  scaleY: 1
+}).to(".box2", 0.2, {
   scaleX: 1.5,
   scaleY: 1.5
-}, "fuck").to(".box2", 0.3, {
-  y: 400,
-  "background-color": "green",
-  scaleX: 2,
-  scaleY: 2,
-  delay: 0.1
-}, "fuck").to(".box", 1, {
-  x: 200
-}).delay(2).to(".box2", 1, {
-  x: 150,
-  rotationZ: -720,
-  "border-radius": "100px"
-}).set(".box2", {
-  "border": "100px solid #ccc"
-}).delay(2).to(".box1", 1, {
-  x: 100,
-  skewX: 30
-}).delay(2).to(".box3", 1, {
-  x: 50,
-  onComplete: function() {
-    return console.log("fuck--");
-  }
-}).to(".box", 1, {
-  skewX: -30,
-  scaleY: 0,
-  scaleX: 0,
+}).to(".box2", 0.3, {
+  scaleX: 0.7,
+  scaleY: 0.7
+}).to(".box2", 0.2, {
+  scaleX: 1,
+  scaleY: 1,
   x: 0,
   y: 0
 }).call((function(_this) {
@@ -66,6 +38,8 @@ tl.to(".box", 0.5, {
     });
   };
 })(this));
+
+tl.start();
 
 document.getElementById("start").addEventListener("click", function() {
   return tl.start();
@@ -83,12 +57,10 @@ document.getElementById("resume").addEventListener("click", function() {
   return tl.resume();
 });
 
-tl.start();
-
 
 
 },{"./src/cssanim.coffee":2}],2:[function(require,module,exports){
-var CSSAmination, animate, camelize, clear, css, disableAnimation, enableAnimation, getDoms, set, setOrAnimate, setTransform, _ref,
+var CSSAmination, addDefaultTransform, animate, camelize, clear, css, disableAnimation, enableAnimation, getDoms, set, setOrAnimate, setTransform, _ref,
   __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 _ref = require("./helpers.coffee"), getDoms = _ref.getDoms, setTransform = _ref.setTransform, css = _ref.css, camelize = _ref.camelize;
@@ -112,6 +84,7 @@ set = function(selector, style, isNoMove) {
     dom = doms[_i];
     if (isNoMove) {
       disableAnimation(dom);
+      addDefaultTransform(dom);
       _results.push(css(dom, style));
     } else {
       _results.push(css(dom, style));
@@ -185,7 +158,6 @@ CSSAmination = (function() {
     this.isRunning = true;
     this.currentProgress = 0;
     this.forceStop = false;
-    this.reset();
     this._loop();
     return this;
   };
@@ -309,12 +281,16 @@ animate = function(state, cb) {
 
 enableAnimation = function(dom, duration, ease) {
   ease = ease || "ease";
-  if (!/translateZ\(.+?\)/.test(dom.style.webkitTransform)) {
-    dom.style.webkitTransform = "translateX(0) translateY(0) translateZ(0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scaleX(1) scaleY(1) scaleZ(1) skewX(0deg) skewY(0deg)";
-  }
+  addDefaultTransform(dom);
   dom.style.webkitBackfaceisibility = "hidden";
   dom.style.webkitPerspective = "1000";
   return dom.style.webkitTransition = "all " + duration + "s " + ease;
+};
+
+addDefaultTransform = function(dom) {
+  if (!/translateZ\(.+?\)/.test(dom.style.webkitTransform)) {
+    return dom.style.webkitTransform = "translateX(0) translateY(0) translateZ(0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scaleX(1) scaleY(1) scaleZ(1) skewX(0deg) skewY(0deg)";
+  }
 };
 
 disableAnimation = function(dom) {

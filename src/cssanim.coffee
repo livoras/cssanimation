@@ -9,6 +9,7 @@ set = (selector, style, isNoMove)->
     for dom in doms
         if isNoMove
             disableAnimation dom
+            addDefaultTransform dom
             css dom, style
         else
             css dom, style
@@ -51,7 +52,6 @@ class CSSAmination
         @isRunning = yes
         @currentProgress = 0
         @forceStop = no
-        @reset()
         @_loop()
         @
     _loop:  ->
@@ -134,11 +134,14 @@ animate = (state, cb)->
 
 enableAnimation = (dom, duration, ease)->
     ease = ease or "ease"
-    if not /translateZ\(.+?\)/.test dom.style.webkitTransform
-        dom.style.webkitTransform = "translateX(0) translateY(0) translateZ(0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scaleX(1) scaleY(1) scaleZ(1) skewX(0deg) skewY(0deg)"
+    addDefaultTransform dom
     dom.style.webkitBackfaceisibility = "hidden"
     dom.style.webkitPerspective = "1000"
     dom.style.webkitTransition = "all #{duration}s #{ease}"
+
+addDefaultTransform = (dom)->
+    if not /translateZ\(.+?\)/.test dom.style.webkitTransform
+        dom.style.webkitTransform = "translateX(0) translateY(0) translateZ(0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scaleX(1) scaleY(1) scaleZ(1) skewX(0deg) skewY(0deg)"
 
 disableAnimation = (dom)->
     dom.style.webkitTransition = ""
