@@ -275,43 +275,31 @@ setOrAnimate = function(state, cb) {
     if (!state.style.delay) {
       return _animate();
     } else {
-      return setTimeout(_animate, state.style.delay);
+      return setTimeout(_animate, state.style.delay * 1000);
     }
   }
 };
 
 animate = function(state, cb) {
-  var delay, doms, _animate;
+  var dom, doms, style, _i, _len;
   doms = getDoms(state.selector);
-  delay = state.style.delay || 0;
-  console.log(delay, 'fuck');
-  _animate = function() {
-    var dom, style, _i, _len, _results;
-    _results = [];
-    for (_i = 0, _len = doms.length; _i < _len; _i++) {
-      dom = doms[_i];
-      enableAnimation(dom, state.secs, state.style.ease);
-      style = processStateToStyle(state.style);
-      _results.push(css(dom, style));
-    }
-    return _results;
-  };
-  if (delay) {
-    setTimeout(_animate, delay);
-  } else {
-    _animate();
+  for (_i = 0, _len = doms.length; _i < _len; _i++) {
+    dom = doms[_i];
+    enableAnimation(dom, state.secs, state.style.ease);
+    style = processStateToStyle(state.style);
+    css(dom, style);
   }
   return setTimeout(function() {
-    var dom, _base, _i, _len;
-    for (_i = 0, _len = doms.length; _i < _len; _i++) {
-      dom = doms[_i];
+    var _base, _j, _len1;
+    for (_j = 0, _len1 = doms.length; _j < _len1; _j++) {
+      dom = doms[_j];
       disableAnimation(dom);
     }
     if (typeof cb === "function") {
       cb();
     }
     return typeof (_base = state.style).onComplete === "function" ? _base.onComplete() : void 0;
-  }, (state.secs + delay) * 1000);
+  }, state.secs * 1000);
 };
 
 enableAnimation = function(dom, duration, ease) {

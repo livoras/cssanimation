@@ -107,25 +107,20 @@ setOrAnimate = (state, cb)->
         cb?()
     else
         if not state.style.delay then _animate()
-        else setTimeout _animate, state.style.delay
+        else setTimeout _animate, state.style.delay * 1000
 
 animate = (state, cb)->
     doms = getDoms state.selector
-    delay = state.style.delay or 0
-    console.log delay, 'fuck'
-    _animate = ->
-        for dom in doms
-            enableAnimation dom, state.secs, state.style.ease
-            style = processStateToStyle state.style
-            css dom, style
-    if delay then setTimeout _animate, delay
-    else _animate()
+    for dom in doms
+        enableAnimation dom, state.secs, state.style.ease
+        style = processStateToStyle state.style
+        css dom, style
     setTimeout ->
         for dom in doms
             disableAnimation dom
         cb?()
         state.style.onComplete?()
-    , (state.secs + delay) * 1000
+    , state.secs * 1000
 
 enableAnimation = (dom, duration, ease)->
     ease = ease or "ease"
