@@ -52,6 +52,7 @@ class CSSAmination
         @isRunning = yes
         @currentProgress = 0
         @forceStop = no
+        @reset()
         @_loop()
         @
     _loop:  ->
@@ -101,7 +102,7 @@ class CSSAmination
         @forceStop = yes
         @isRunning = no
         @isPause = no
-        @reset()
+        setTimeout => @reset()
         @
 
     reset: ->
@@ -117,7 +118,7 @@ setOrAnimate = (state, cb)->
     _animate = -> animate state, cb
     if not state.secs
         set state.selector, state.style, yes
-        cb?()
+        setTimeout cb
     else
         if not state.style.delay then _animate()
         else setTimeout _animate, state.style.delay * 1000
@@ -148,4 +149,5 @@ disableAnimation = (dom)->
     dom.style.transition = ""
 
 CSSAmination.set = set
+CSSAmination.set = clear
 module.exports = CSSAmination
